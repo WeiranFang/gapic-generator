@@ -47,17 +47,14 @@ def runJavaTests(api_name, api_version, log):
     gapic_dir = "gapic-google-cloud-%s-%s" % (api_name, api_version)
     # Run gradle test in the main java directory and also in the gapic directory.
     cmds = ("%s/gradlew build test" % os.getcwd()).split()
-    logger.info("cmds: %s" % " ".join(cmds))
     exit_code = subprocess.call(cmds, stdout=log, stderr=log)
     if exit_code:
         return exit_code
 
     cmds = ("%s/gradlew -p %s build test" % (os.getcwd(), gapic_dir)).split()
-    logger.info("cmds: %s" % " ".join(cmds))
     return subprocess.call(cmds, stdout=log, stderr=log)
 
 def runPythonTests(api_name, api_version, log):
-    logger.info(os.getcwd())
     gapic_dir = "%s-%s" % (api_name, api_version)
     # Run nox in the gapic directory.
     return subprocess.call(["nox"], cwd=gapic_dir, stdout=log, stderr=log)
@@ -68,7 +65,6 @@ def run_smoke_test(root_dir, log, user_config):
     success = []
     warning = []
     for (api_name, api_version, artman_yaml_path) in test_apis:
-        logger.info("api_name: %s, api_version: %s, artman_yaml_path: %s" % (api_name, api_version, artman_yaml_path))
         for language in test_languages:
             target = language + "_gapic"
             logger.info('Start artifact generation for %s of %s'
@@ -135,7 +131,6 @@ def _generate_artifact(artman_config, artifact_name, root_dir, log_file, user_co
             '--root-dir', root_dir,
             'generate', artifact_name
         ]
-        logger.info("Calling artman: %s", " ".join(grpc_pipeline_args))
         return subprocess.call(grpc_pipeline_args, stdout=log, stderr=log)
 
 def _test_artifact(test_call, api_name, api_version, log_file):
