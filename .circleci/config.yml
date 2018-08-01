@@ -1,8 +1,56 @@
-version: 2
+version: 2.0
+
 jobs:
   build:
     docker:
-      - image: googleapis/artman:latest
+      - image: googleapis/git
     steps:
       - checkout
-      - run: echo "Ran circleci."
+    working_directory: /gapic-generator
+  run-generated-unit-tests:
+    docker:
+      - image: googleapis/artman:latest
+    working_directory: /gapic-generator
+    steps:
+      - checkout
+      - run:
+          name: Checkout googleapis
+          command: |
+            git clone https://github.com/googleapis/googleapis.git /tmp/googleapis
+      - run:
+          name: Build and install local toolkit
+          command: |
+            export RUNNING_IN_ARTMAN_DOCKER=True
+            ./gradlew fatJar
+            ./gradlew createToolPaths
+            rm -rf /toolkit/.git/
+            ./gradlew install build -x test
+            export TOOLKIT_HOME=/gapic-generator
+      - run:
+          name: Generate and run unit tests
+          command: |
+            mkdir /tmp/reports
+            export RUNNING_IN_ARTMAN_DOCKER=True
+            python gapic_smoketest.py \
+                --root-dir=/tmp/googleapis/ \
+                --log=/tmp/reports/smoketest.log \
+                --user-config=artman_config.yaml
+      - store_test_results:
+          path: /tmp/reports
+      - store_artifacts:
+          path: /tmp/reports
+      - store_artifacts:
+          path: /var/code/googleapis
+      - run:
+          name: Check if generation script caused any changes.
+          command: git status -s && git diff-index --quiet HEAD
+
+workflows:
+  version: 2
+  tests:
+    jobs:
+      - run-generated-unit-tests
+
+machine:
+  services:
+    - docker
