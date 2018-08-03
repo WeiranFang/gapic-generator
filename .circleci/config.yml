@@ -99,6 +99,7 @@ jobs:
       - run:
           name: Generate and run Java unit tests for Pubsub
           command: |
+            pip install --pre nox-automation
             cd workspace/gapic-generator
             python gapic_smoketest.py --user-config=artman_config.yaml python pubsub
       - store_test_results:
@@ -114,6 +115,7 @@ jobs:
         - run:
             name: Generate and run Java unit tests for Logging
             command: |
+              pip install --pre nox-automation
               cd workspace/gapic-generator
               python gapic_smoketest.py --user-config=artman_config.yaml python logging
         - store_test_results:
