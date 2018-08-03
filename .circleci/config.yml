@@ -165,3 +165,5 @@ workflows:
 machine:
   services:
     - docker
+  python:
+    version: 3.6.0
