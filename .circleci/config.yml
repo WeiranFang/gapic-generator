@@ -34,7 +34,7 @@ jobs:
           command: |
             export RUNNING_IN_ARTMAN_DOCKER=True
             rm -rf gapic-generator/.git/
-            gapic-generator/gradlew -p gapic-generator fatJar createToolPaths install build -x test
+            gapic-generator/gradlew -p gapic-generator fatJar createToolPaths install build -x test -x javadoc
       - run:
           name: Make reports dir
           command: mkdir -p reports
@@ -55,7 +55,7 @@ jobs:
           name: Generate and run Java unit tests for Pubsub
           command: |
             cd workspace/gapic-generator
-            python gapic_smoketest.py --user-config=artman_config.yaml java pubsub
+            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml java pubsub
       - store_test_results:
           path: /tmp/workspace/reports
       - store_artifacts:
@@ -70,7 +70,7 @@ jobs:
             name: Generate and run Java unit tests for Logging
             command: |
               cd workspace/gapic-generator
-              python gapic_smoketest.py --user-config=artman_config.yaml java logging
+              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml java logging
         - store_test_results:
             path: /tmp/workspace/reports
         - store_artifacts:
@@ -85,7 +85,7 @@ jobs:
             name: Generate and run Java unit tests for Speech
             command: |
               cd workspace/gapic-generator
-              python gapic_smoketest.py --user-config=artman_config.yaml java speech
+              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml java speech
         - store_test_results:
             path: /tmp/workspace/reports
         - store_artifacts:
@@ -101,7 +101,7 @@ jobs:
           command: |
             pip install --pre nox-automation
             cd workspace/gapic-generator
-            python gapic_smoketest.py --user-config=artman_config.yaml python pubsub
+            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python pubsub
       - store_test_results:
           path: /tmp/workspace/reports
       - store_artifacts:
@@ -117,7 +117,7 @@ jobs:
             command: |
               pip install --pre nox-automation
               cd workspace/gapic-generator
-              python gapic_smoketest.py --user-config=artman_config.yaml python logging
+              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python logging
         - store_test_results:
             path: /tmp/workspace/reports
         - store_artifacts:
@@ -132,7 +132,7 @@ jobs:
             name: Generate and run Java unit tests for Speech
             command: |
               cd workspace/gapic-generator
-              python gapic_smoketest.py --user-config=artman_config.yaml python speech
+              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python speech
         - store_test_results:
             path: /tmp/workspace/reports
         - store_artifacts:
@@ -143,15 +143,15 @@ workflows:
   run_generated_tests:
     jobs:
       - install-toolkit
-      - test-java-pubsub:
-          requires:
-            - install-toolkit
-      - test-java-logging:
-          requires:
-            - install-toolkit
-      - test-java-speech:
-          requires:
-            - install-toolkit
+#      - test-java-pubsub:
+#          requires:
+#            - install-toolkit
+#      - test-java-logging:
+#          requires:
+#            - install-toolkit
+#      - test-java-speech:
+#          requires:
+#            - install-toolkit
       - test-python-pubsub:
           requires:
             - install-toolkit

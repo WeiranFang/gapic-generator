@@ -55,7 +55,9 @@ def run_java_tests(api_name, api_version, log):
 
 
 def run_python_tests(api_name, api_version, log):
+    logger.info("In directory: %s " % os.getcwd())
     gapic_dir = "%s-%s" % (api_name, api_version)
+    logger.info("Changing to directory: %s" % gapic_dir)
     # Run nox in the gapic directory.
     return subprocess.call(["nox"], cwd=gapic_dir, stdout=log, stderr=log)
 
@@ -79,6 +81,7 @@ def run_smoke_test(api_name, language, root_dir, log, user_config):
         failure.append(msg)
         logger.info(msg)
     else:
+    # if True:
         msg = 'Succeded to generate %s of %s.' % (
             target, artman_yaml_path)
         success.append(msg)
@@ -137,9 +140,12 @@ def _generate_artifact(artman_config, artifact_name, root_dir, log_file, user_co
                     (artifact_name, artman_config, " ".join(grpc_pipeline_args)))
         return subprocess.call(grpc_pipeline_args, stdout=log, stderr=log)
 
+
 def _test_artifact(test_call, api_name, api_version, log_file):
     with open(log_file, 'a') as log:
+        logger.info("In directory: %s" % os.getcwd())
         return test_call(api_name, api_version, log)
+
 
 def parse_args(*args):
     parser = argparse.ArgumentParser()
@@ -162,7 +168,8 @@ def parse_args(*args):
         help='Specify where smoketest log should be stored.')
     parser.add_argument(
         '--user-config',
-        default=None,
+        # Default to the artman-specified default location.
+        default="~/.artman/config.yaml",
         help='Specify where the artman user config lives.')
     return parser.parse_args(args=args)
 
