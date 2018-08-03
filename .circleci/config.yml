@@ -1,55 +1,164 @@
 version: 2.0
 
+anchor_test_env: &anchor_test_env
+  docker:
+    - image: googleapis/artman:0.14.3
+  environment:
+    RUNNING_IN_ARTMAN_DOCKER: True
+  working_directory: /tmp/
+
 jobs:
   build:
     docker:
-      - image: googleapis/git
+      # TODO: Find a way to cache the armtan executor docker image.
+      - image: circleci/openjdk:8-jdk
     steps:
       - checkout
-    working_directory: /gapic-generator
-  run-generated-unit-tests:
+    working_directory: /tmp/workspace/gapic-generator
+  install-toolkit:
     docker:
-      - image: googleapis/artman:latest
-    working_directory: /gapic-generator
+      - image: circleci/openjdk:8-jdk
+    working_directory: /tmp/workspace
     steps:
-      - checkout
+      - checkout:
+          path: gapic-generator
+      - run:
+          command: ls gapic-generator
       - run:
           name: Checkout googleapis
           command: |
-            git clone https://github.com/googleapis/googleapis.git /tmp/googleapis
+            mkdir -p googleapis
+            git clone https://github.com/googleapis/googleapis.git googleapis
       - run:
           name: Build and install local toolkit
           command: |
             export RUNNING_IN_ARTMAN_DOCKER=True
-            ./gradlew fatJar
-            ./gradlew createToolPaths
-            rm -rf /toolkit/.git/
-            ./gradlew install build -x test
-            export TOOLKIT_HOME=/gapic-generator
+            rm -rf gapic-generator/.git/
+            gapic-generator/gradlew -p gapic-generator fatJar createToolPaths install build -x test
       - run:
-          name: Generate and run unit tests
+          name: Make reports dir
+          command: mkdir -p reports
+      - persist_to_workspace:
+          # Save all generated directories in workspace for later CircleCI jobs.
+          root: /tmp/workspace
+          paths:
+            - googleapis
+            - gapic-generator
+            - reports
+  test-java-pubsub:
+    <<: *anchor_test_env
+    steps:
+      - attach_workspace:
+          # Use the workspace created in install-toolkit
+          at: workspace
+      - run:
+          name: Generate and run Java unit tests for Pubsub
           command: |
-            mkdir /tmp/reports
-            export RUNNING_IN_ARTMAN_DOCKER=True
-            python gapic_smoketest.py \
-                --root-dir=/tmp/googleapis/ \
-                --log=/tmp/reports/smoketest.log \
-                --user-config=artman_config.yaml
+            cd workspace/gapic-generator
+            python gapic_smoketest.py --user-config=artman_config.yaml java pubsub
       - store_test_results:
-          path: /tmp/reports
+          path: /tmp/workspace/reports
       - store_artifacts:
-          path: /tmp/reports
-      - store_artifacts:
-          path: /var/code/googleapis
+          path: /tmp/workspace/reports
+  test-java-logging:
+      <<: *anchor_test_env
+      steps:
+        - attach_workspace:
+            # Use the workspace created in install-toolkit
+            at: workspace
+        - run:
+            name: Generate and run Java unit tests for Logging
+            command: |
+              cd workspace/gapic-generator
+              python gapic_smoketest.py --user-config=artman_config.yaml java logging
+        - store_test_results:
+            path: /tmp/workspace/reports
+        - store_artifacts:
+            path: /tmp/workspace/reports
+  test-java-speech:
+      <<: *anchor_test_env
+      steps:
+        - attach_workspace:
+            # Use the workspace created in install-toolkit
+            at: workspace
+        - run:
+            name: Generate and run Java unit tests for Speech
+            command: |
+              cd workspace/gapic-generator
+              python gapic_smoketest.py --user-config=artman_config.yaml java speech
+        - store_test_results:
+            path: /tmp/workspace/reports
+        - store_artifacts:
+            path: /tmp/workspace/reports
+  test-python-pubsub:
+    <<: *anchor_test_env
+    steps:
+      - attach_workspace:
+          # Use the workspace created in install-toolkit
+          at: workspace
       - run:
-          name: Check if generation script caused any changes.
-          command: git status -s && git diff-index --quiet HEAD
+          name: Generate and run Java unit tests for Pubsub
+          command: |
+            cd workspace/gapic-generator
+            python gapic_smoketest.py --user-config=artman_config.yaml python pubsub
+      - store_test_results:
+          path: /tmp/workspace/reports
+      - store_artifacts:
+          path: /tmp/workspace/reports
+  test-python-logging:
+      <<: *anchor_test_env
+      steps:
+        - attach_workspace:
+            # Use the workspace created in install-toolkit
+            at: workspace
+        - run:
+            name: Generate and run Java unit tests for Logging
+            command: |
+              cd workspace/gapic-generator
+              python gapic_smoketest.py --user-config=artman_config.yaml python logging
+        - store_test_results:
+            path: /tmp/workspace/reports
+        - store_artifacts:
+            path: /tmp/workspace/reports
+  test-python-speech:
+      <<: *anchor_test_env
+      steps:
+        - attach_workspace:
+            # Use the workspace created in install-toolkit
+            at: workspace
+        - run:
+            name: Generate and run Java unit tests for Speech
+            command: |
+              cd workspace/gapic-generator
+              python gapic_smoketest.py --user-config=artman_config.yaml python speech
+        - store_test_results:
+            path: /tmp/workspace/reports
+        - store_artifacts:
+            path: /tmp/workspace/reports
 
 workflows:
   version: 2
-  tests:
+  run_generated_tests:
     jobs:
-      - run-generated-unit-tests
+      - install-toolkit
+      - test-java-pubsub:
+          requires:
+            - install-toolkit
+      - test-java-logging:
+          requires:
+            - install-toolkit
+      - test-java-speech:
+          requires:
+            - install-toolkit
+      - test-python-pubsub:
+          requires:
+            - install-toolkit
+      - test-python-logging:
+          requires:
+            - install-toolkit
+      - test-python-speech:
+          requires:
+            - install-toolkit
 
 machine:
   services:
