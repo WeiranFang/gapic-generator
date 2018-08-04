@@ -10,14 +10,13 @@ anchor_test_env: &anchor_test_env
 jobs:
   build:
     docker:
-      # TODO: Find a way to cache the artman executor docker image.
-      - image: circleci/openjdk:8-jdk
+      - image: googleapis/git
     steps:
       - checkout
     working_directory: /tmp/workspace/gapic-generator
-  install-toolkit:
+  generate-clients:
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: googleapis/artman:0.14.3
     working_directory: /tmp/workspace
     steps:
       - checkout:
@@ -36,8 +35,16 @@ jobs:
             rm -rf gapic-generator/.git/
             gapic-generator/gradlew -p gapic-generator fatJar createToolPaths install build -x test -x javadoc
       - run:
-          name: Make reports dir
+          name: Make reports directory
           command: mkdir -p reports
+      - run:
+          name: Generate all client libraries
+          command: |
+            python gapic_smoketest.py \
+                --user-config=.circleci/artman_config.yaml \
+                --log=/tmp/workspace/reports/smoketest.log
+      - store_artifacts:
+          path: /tmp/workspace/reports
       - persist_to_workspace:
           # Save all generated directories in workspace for later CircleCI jobs.
           root: /tmp/workspace
@@ -45,142 +52,160 @@ jobs:
             - googleapis
             - gapic-generator
             - reports
-  test-java-pubsub:
-    <<: *anchor_test_env
+  test-java:
+    docker:
+      - image: circleci/openjdk:8-jdk
     steps:
       - attach_workspace:
-          # Use the workspace created in install-toolkit
+          # Use the workspace created in generate-clients
           at: workspace
       - run:
-          name: Generate and run Java unit tests for Pubsub
+          name: Run all Java generated unit tests
           command: |
-            cd workspace/gapic-generator
-            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml java pubsub
+            cd gapic-generator/artman-genfiles/java
+            ./gradlew build test
+      - run:
+          name: Save test results
+          command: |
+            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} /tmp/workspace/reports/ \;
       - store_test_results:
           path: /tmp/workspace/reports
       - store_artifacts:
           path: /tmp/workspace/reports
-  test-java-logging:
-      <<: *anchor_test_env
-      steps:
-        - attach_workspace:
-            # Use the workspace created in install-toolkit
-            at: workspace
-        - run:
-            name: Generate and run Java unit tests for Logging
-            command: |
-              cd workspace/gapic-generator
-              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml java logging
-        - store_test_results:
-            path: /tmp/workspace/reports
-        - store_artifacts:
-            path: /tmp/workspace/reports
-  test-java-speech:
-      <<: *anchor_test_env
-      steps:
-        - attach_workspace:
-            # Use the workspace created in install-toolkit
-            at: workspace
-        - run:
-            name: Generate and run Java unit tests for Speech
-            command: |
-              cd workspace/gapic-generator
-              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml java speech
-        - store_test_results:
-            path: /tmp/workspace/reports
-        - store_artifacts:
-            path: /tmp/workspace/reports
-  test-python-pubsub:
-    <<: *anchor_test_env
-    steps:
-      - attach_workspace:
-          # Use the workspace created in install-toolkit
-          at: workspace
-      - run:
-          name: Generate and run Java unit tests for Pubsub
-          command: |
-            pip install --pre nox-automation
-            cd workspace/gapic-generator
-            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python pubsub
-      - store_test_results:
-          path: /tmp/workspace/reports
-      - store_artifacts:
-          path: /tmp/workspace/reports
-  test-python-logging:
-    <<: *anchor_test_env
-    steps:
-      - attach_workspace:
-          # Use the workspace created in install-toolkit
-          at: workspace
-      - run:
-          name: Generate and run Java unit tests for Logging
-          command: |
-            pip install --pre nox-automation
-            cd workspace/gapic-generator
-            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python logging
-      - store_test_results:
-          path: /tmp/workspace/reports
-      - store_artifacts:
-          path: /tmp/workspace/reports
-  test-python-speech:
-    <<: *anchor_test_env
-    steps:
-      - attach_workspace:
-          # Use the workspace created in install-toolkit
-          at: workspace
-      - run:
-          name: Generate and run Java unit tests for Speech
-          command: |
-            pip install --upgrade nox-automation codecov
-            cd workspace/gapic-generator
-            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python speech
-      - store_test_results:
-          path: /tmp/workspace/reports
-      - store_artifacts:
-          path: /tmp/workspace/reports
-  nox:
-    <<: *anchor_test_env
+  test-python:
+    docker:
+      - image: googleapis/nox:0.18.2
     working_directory: /tmp/workspace/gapic-generator
     steps:
-      - checkout
+      - attach_workspace:
+          # Use the workspace created in generate-clients
+          at: workspace
       - run:
           name: Run nox on pubsub
           command: |
-            git clone https://github.com/GoogleCloudPlatform/google-cloud-python.git
-            cd google-cloud-python/kms
+            cd gapic-generator/artman-genfiles/python/pubsub-v1
+            nox
+      - run:
+          name: Run nox on logging
+          command: |
+            cd gapic-generator/artman-genfiles/python/logging-v2
+            nox
+      - run:
+          name: Run nox on speech
+          command: |
+            cd gapic-generator/artman-genfiles/python/speech-v1
             nox
       - store_test_results:
           path: /tmp/workspace/reports
       - store_artifacts:
           path: /tmp/workspace/reports
+#  test-java-logging:
+#      <<: *anchor_test_env
+#      steps:
+#        - attach_workspace:
+#            # Use the workspace created in generate-clients
+#            at: workspace
+#        - run:
+#            name: Generate and run Java unit tests for Logging
+#            command: |
+#              cd workspace/gapic-generator
+#              python smoketests/gapic_smoketest.py --user-config=.circleci/artman_config.yaml java logging
+#        - store_test_results:
+#            path: /tmp/workspace/reports
+#        - store_artifacts:
+#            path: /tmp/workspace/reports
+#  test-java-speech:
+#      <<: *anchor_test_env
+#      steps:
+#        - attach_workspace:
+#            # Use the workspace created in generate-clients
+#            at: workspace
+#        - run:
+#            name: Generate and run Java unit tests for Speech
+#            command: |
+#              cd workspace/gapic-generator
+#              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml java speech
+#        - store_test_results:
+#            path: /tmp/workspace/reports
+#        - store_artifacts:
+#            path: /tmp/workspace/reports
+#  test-python-pubsub:
+#    <<: *anchor_test_env
+#    steps:
+#      - attach_workspace:
+#          # Use the workspace created in generate-clients
+#          at: workspace
+#      - run:
+#          name: Generate and run Java unit tests for Pubsub
+#          command: |
+#            pip install --pre nox-automation
+#            cd workspace/gapic-generator
+#            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python pubsub
+#      - store_test_results:
+#          path: /tmp/workspace/reports
+#      - store_artifacts:
+#          path: /tmp/workspace/reports
+#  test-python-logging:
+#    <<: *anchor_test_env
+#    steps:
+#      - attach_workspace:
+#          # Use the workspace created in generate-clients
+#          at: workspace
+#      - run:
+#          name: Generate and run Java unit tests for Logging
+#          command: |
+#            pip install --pre nox-automation
+#            cd workspace/gapic-generator
+#            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python logging
+#      - store_test_results:
+#          path: /tmp/workspace/reports
+#      - store_artifacts:
+#          path: /tmp/workspace/reports
+#  test-python-speech:
+#    <<: *anchor_test_env
+#    steps:
+#      - attach_workspace:
+#          # Use the workspace created in generate-clients
+#          at: workspace
+#      - run:
+#          name: Generate and run Java unit tests for Speech
+#          command: |
+#            pip install --upgrade nox-automation codecov
+#            cd workspace/gapic-generator
+#            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python speech
+#      - store_test_results:
+#          path: /tmp/workspace/reports
+#      - store_artifacts:
+#          path: /tmp/workspace/reports
 
 workflows:
   version: 2
   run_generated_tests:
     jobs:
       - nox
-      - install-toolkit
+      - generate-clients
+      - test-java:
+          requires:
+            - generate-clients
 #      - test-java-pubsub:
 #          requires:
-#            - install-toolkit
+#            - generate-clients
 #      - test-java-logging:
 #          requires:
-#            - install-toolkit
+#            - generate-clients
 #      - test-java-speech:
 #          requires:
-#            - install-toolkit
+#            - generate-clients
 #      - test-python-pubsub:
 #          requires:
-#            - install-toolkit
+#            - generate-clients
 #      - test-python-logging:
 #          requires:
-#            - install-toolkit
-      - test-python-speech:
+#            - generate-clients
+      - test-python:
           requires:
-            - install-toolkit
+            - generate-clients
 
 machine:
   services:
     - docker
-  python:
-    version: 3.6.0
