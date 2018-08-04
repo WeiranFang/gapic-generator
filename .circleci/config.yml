@@ -10,7 +10,7 @@ anchor_test_env: &anchor_test_env
 jobs:
   build:
     docker:
-      # TODO: Find a way to cache the armtan executor docker image.
+      # TODO: Find a way to cache the artman executor docker image.
       - image: circleci/openjdk:8-jdk
     steps:
       - checkout
@@ -107,42 +107,58 @@ jobs:
       - store_artifacts:
           path: /tmp/workspace/reports
   test-python-logging:
-      <<: *anchor_test_env
-      steps:
-        - attach_workspace:
-            # Use the workspace created in install-toolkit
-            at: workspace
-        - run:
-            name: Generate and run Java unit tests for Logging
-            command: |
-              pip install --pre nox-automation
-              cd workspace/gapic-generator
-              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python logging
-        - store_test_results:
-            path: /tmp/workspace/reports
-        - store_artifacts:
-            path: /tmp/workspace/reports
+    <<: *anchor_test_env
+    steps:
+      - attach_workspace:
+          # Use the workspace created in install-toolkit
+          at: workspace
+      - run:
+          name: Generate and run Java unit tests for Logging
+          command: |
+            pip install --pre nox-automation
+            cd workspace/gapic-generator
+            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python logging
+      - store_test_results:
+          path: /tmp/workspace/reports
+      - store_artifacts:
+          path: /tmp/workspace/reports
   test-python-speech:
-      <<: *anchor_test_env
-      steps:
-        - attach_workspace:
-            # Use the workspace created in install-toolkit
-            at: workspace
-        - run:
-            name: Generate and run Java unit tests for Speech
-            command: |
-              cd workspace/gapic-generator
-              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python speech
-        - store_test_results:
-            path: /tmp/workspace/reports
-        - store_artifacts:
-            path: /tmp/workspace/reports
+    <<: *anchor_test_env
+    steps:
+      - attach_workspace:
+          # Use the workspace created in install-toolkit
+          at: workspace
+      - run:
+          name: Generate and run Java unit tests for Speech
+          command: |
+            cd workspace/gapic-generator
+            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python speech
+      - store_test_results:
+          path: /tmp/workspace/reports
+      - store_artifacts:
+          path: /tmp/workspace/reports
+  nox:
+    docker:
+      - image: googleapis/nox
+    working_directory: /tmp/
+    steps:
+      - run:
+          name: Run nox on pubsub
+          command: |
+            git clone https://github.com/GoogleCloudPlatform/google-cloud-python.git
+            cd google-cloud-python/kms
+            nox
+      - store_test_results:
+          path: /tmp/workspace/reports
+      - store_artifacts:
+          path: /tmp/workspace/reports
 
 workflows:
   version: 2
   run_generated_tests:
     jobs:
-      - install-toolkit
+      - nox
+#      - install-toolkit
 #      - test-java-pubsub:
 #          requires:
 #            - install-toolkit
@@ -152,15 +168,15 @@ workflows:
 #      - test-java-speech:
 #          requires:
 #            - install-toolkit
-      - test-python-pubsub:
-          requires:
-            - install-toolkit
-      - test-python-logging:
-          requires:
-            - install-toolkit
-      - test-python-speech:
-          requires:
-            - install-toolkit
+#      - test-python-pubsub:
+#          requires:
+#            - install-toolkit
+#      - test-python-logging:
+#          requires:
+#            - install-toolkit
+#      - test-python-speech:
+#          requires:
+#            - install-toolkit
 
 machine:
   services:
