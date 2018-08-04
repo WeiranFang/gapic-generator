@@ -140,7 +140,7 @@ jobs:
   nox:
     docker:
       - image: googleapis/nox
-    working_directory: /tmp/
+    working_directory: /tmp/workspace/gapic-generator
     steps:
       - checkout
       - run:
