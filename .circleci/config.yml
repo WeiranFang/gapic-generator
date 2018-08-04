@@ -139,8 +139,7 @@ jobs:
       - store_artifacts:
           path: /tmp/workspace/reports
   nox:
-    docker:
-      - image: googleapis/nox
+    <<: *anchor_test_env
     working_directory: /tmp/workspace/gapic-generator
     steps:
       - checkout
