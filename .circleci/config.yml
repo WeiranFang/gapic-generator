@@ -52,10 +52,9 @@ jobs:
           # Save all generated directories in workspace for later CircleCI jobs.
           root: /tmp/workspace
           paths:
-            - googleapis
-            - gapic-generator
-            - reports
+            - gapic-generator/artman-genfiles
   test-java:
+    working_directory: /tmp/
     docker:
       - image: circleci/openjdk:8-jdk
     steps:
@@ -76,6 +75,7 @@ jobs:
       - store_artifacts:
           path: /tmp/workspace/reports
   test-python:
+    working_directory: /tmp/
     docker:
       - image: googleapis/nox:0.18.2
     working_directory: /tmp/workspace/gapic-generator
