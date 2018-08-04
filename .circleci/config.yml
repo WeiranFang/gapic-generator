@@ -67,6 +67,8 @@ jobs:
           # Use the workspace created in generate-clients
           at: workspace
       - run:
+          command: pwd
+      - run:
           name: Run all Java generated unit tests
           command: |
             cd gapic-generator/artman-genfiles/java
@@ -83,7 +85,7 @@ jobs:
     working_directory: /tmp/
     docker:
 #      - image: circleci/openjdk:8-jdk
-      - image: googleapis/nox:0.18.2
+      - image: googleapis/nox:0.17.0
     steps:
       - attach_workspace:
           # Use the workspace created in generate-clients
