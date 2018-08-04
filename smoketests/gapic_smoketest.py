@@ -30,9 +30,9 @@ logger = logging.getLogger('smoketest')
 logger.setLevel(logging.INFO)
 
 test_languages = [
-    "java" : lambda api_name, api_version, log : run_java_tests(api_name, api_version, log),
-    "python" : lambda api_name, api_version, log : run_python_tests(api_name, api_version, log)
-    # # TODO: all other languages
+    "java",
+    "python"
+    # TODO: all other languages
 ]
 
 test_apis = {
