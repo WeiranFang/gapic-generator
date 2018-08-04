@@ -1,12 +1,5 @@
 version: 2.0
 
-#anchor_test_env: &anchor_test_env
-#  docker:
-#    - image: googleapis/artman:0.14.3
-#  environment:
-#    RUNNING_IN_ARTMAN_DOCKER: True
-#  working_directory: /tmp/
-
 jobs:
   build:
     docker:
@@ -16,39 +9,32 @@ jobs:
     working_directory: /tmp/workspace/gapic-generator
   generate-clients:
     docker:
-#      - image: googleapis/artman:0.14.3
-      - image: googleapis/git
+      - image: googleapis/artman:0.14.3
     working_directory: /tmp/workspace
     steps:
       - checkout:
           path: gapic-generator
-#      - run:
-#          name: Checkout googleapis
-#          command: |
-#            mkdir -p googleapis
-#            git clone https://github.com/googleapis/googleapis.git googleapis
-#      - run:
-#          name: Build and install local toolkit
-#          command: |
-#            export RUNNING_IN_ARTMAN_DOCKER=True
-#            rm -rf gapic-generator/.git/
-#            gapic-generator/gradlew -p gapic-generator fatJar createToolPaths install build -x test -x javadoc
-#      - run:
-#          name: Make reports directory
-#          command: mkdir -p reports
-#      - run:
-#          name: Generate all client libraries
-#          command: |
-#            cd gapic-generator
-#            python smoketests/gapic_smoketest.py \
-#                --user-config=.circleci/artman_config.yaml \
-#                --log=/tmp/workspace/reports/smoketest.log
       - run:
-          name: Make dummy workspace directory
+          name: Checkout googleapis
           command: |
-            mkdir reports
-            mkdir gapic-generator/artman-genfiles
-            echo "hello world" > gapic-generator/artman-genfiles/hello.txt
+            mkdir -p googleapis
+            git clone https://github.com/googleapis/googleapis.git googleapis
+      - run:
+          name: Build and install local toolkit
+          command: |
+            export RUNNING_IN_ARTMAN_DOCKER=True
+            rm -rf gapic-generator/.git/
+            gapic-generator/gradlew -p gapic-generator fatJar createToolPaths install build -x test -x javadoc
+      - run:
+          name: Make reports directory
+          command: mkdir -p reports
+      - run:
+          name: Generate all client libraries
+          command: |
+            cd gapic-generator
+            python smoketests/gapic_smoketest.py \
+                --user-config=.circleci/artman_config.yaml \
+                --log=/tmp/workspace/reports/smoketest.log
       - store_artifacts:
           path: /tmp/workspace/reports
       - store_artifacts:
@@ -67,11 +53,9 @@ jobs:
           # Use the workspace created in generate-clients
           at: workspace
       - run:
-          command: pwd
-      - run:
           name: Run all Java generated unit tests
           command: |
-            cd gapic-generator/artman-genfiles/java
+            cd workspace/gapic-generator/artman-genfiles/java
             ./gradlew build test
       - run:
           name: Save test results
@@ -84,33 +68,31 @@ jobs:
   test-python:
     working_directory: /tmp/
     docker:
-#      - image: circleci/openjdk:8-jdk
+      # Use Docker image version v0.17.0 because latest v0.18.2 is not compatible with `attach_workspace` step.
       - image: googleapis/nox:0.17.0
     steps:
       - attach_workspace:
           # Use the workspace created in generate-clients
           at: workspace
       - run:
-          command: cat gapic-generator/artman-genfiles/hello.txt
-#      - run:
-#          name: Run nox on pubsub
-#          command: |
-#            cd workspace/gapic-generator/artman-genfiles/python/pubsub-v1
-#            nox
-#      - run:
-#          name: Run nox on logging
-#          command: |
-#            cd workspace/gapic-generator/artman-genfiles/python/logging-v2
-#            nox
-#      - run:
-#          name: Run nox on speech
-#          command: |
-#            cd workspace/gapic-generator/artman-genfiles/python/speech-v1
-#            nox
-#      - store_test_results:
-#          path: /tmp/workspace/reports
-#      - store_artifacts:
-#          path: /tmp/workspace/reports
+          name: Run nox on pubsub
+          command: |
+            cd workspace/gapic-generator/artman-genfiles/python/pubsub-v1
+            nox
+      - run:
+          name: Run nox on logging
+          command: |
+            cd workspace/gapic-generator/artman-genfiles/python/logging-v2
+            nox
+      - run:
+          name: Run nox on speech
+          command: |
+            cd workspace/gapic-generator/artman-genfiles/python/speech-v1
+            nox
+      - store_test_results:
+          path: /tmp/workspace/reports
+      - store_artifacts:
+          path: /tmp/workspace/reports
 
 workflows:
   version: 2
