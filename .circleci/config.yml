@@ -21,29 +21,33 @@ jobs:
     steps:
       - checkout:
           path: gapic-generator
+#      - run:
+#          name: Checkout googleapis
+#          command: |
+#            mkdir -p googleapis
+#            git clone https://github.com/googleapis/googleapis.git googleapis
+#      - run:
+#          name: Build and install local toolkit
+#          command: |
+#            export RUNNING_IN_ARTMAN_DOCKER=True
+#            rm -rf gapic-generator/.git/
+#            gapic-generator/gradlew -p gapic-generator fatJar createToolPaths install build -x test -x javadoc
+#      - run:
+#          name: Make reports directory
+#          command: mkdir -p reports
+#      - run:
+#          name: Generate all client libraries
+#          command: |
+#            cd gapic-generator
+#            python smoketests/gapic_smoketest.py \
+#                --user-config=.circleci/artman_config.yaml \
+#                --log=/tmp/workspace/reports/smoketest.log
       - run:
-          command: ls gapic-generator
-      - run:
-          name: Checkout googleapis
-          command: |
-            mkdir -p googleapis
-            git clone https://github.com/googleapis/googleapis.git googleapis
-      - run:
-          name: Build and install local toolkit
-          command: |
-            export RUNNING_IN_ARTMAN_DOCKER=True
-            rm -rf gapic-generator/.git/
-            gapic-generator/gradlew -p gapic-generator fatJar createToolPaths install build -x test -x javadoc
-      - run:
-          name: Make reports directory
-          command: mkdir -p reports
-      - run:
-          name: Generate all client libraries
-          command: |
-            cd gapic-generator
-            python smoketests/gapic_smoketest.py \
-                --user-config=.circleci/artman_config.yaml \
-                --log=/tmp/workspace/reports/smoketest.log
+          name: Make dummy workspace directory
+          command:
+            mkdir reports
+            mkdir gapic-generator/artman-genfiles
+            echo "hello world" > gapic/generator/artman-genfiles/hello.txt
       - store_artifacts:
           path: /tmp/workspace/reports
       - store_artifacts:
@@ -83,6 +87,8 @@ jobs:
           # Use the workspace created in generate-clients
           at: workspace
       - run:
+          command: echo gapic-generator/artman-genfiles/hello.txt
+      - run:
           name: Run nox on pubsub
           command: |
             cd workspace/gapic-generator/artman-genfiles/python/pubsub-v1
@@ -101,84 +107,6 @@ jobs:
           path: /tmp/workspace/reports
       - store_artifacts:
           path: /tmp/workspace/reports
-#  test-java-logging:
-#      <<: *anchor_test_env
-#      steps:
-#        - attach_workspace:
-#            # Use the workspace created in generate-clients
-#            at: workspace
-#        - run:
-#            name: Generate and run Java unit tests for Logging
-#            command: |
-#              cd workspace/gapic-generator
-#              python smoketests/gapic_smoketest.py --user-config=.circleci/artman_config.yaml java logging
-#        - store_test_results:
-#            path: /tmp/workspace/reports
-#        - store_artifacts:
-#            path: /tmp/workspace/reports
-#  test-java-speech:
-#      <<: *anchor_test_env
-#      steps:
-#        - attach_workspace:
-#            # Use the workspace created in generate-clients
-#            at: workspace
-#        - run:
-#            name: Generate and run Java unit tests for Speech
-#            command: |
-#              cd workspace/gapic-generator
-#              python gapic_smoketest.py --user-config=.circleci/artman_config.yaml java speech
-#        - store_test_results:
-#            path: /tmp/workspace/reports
-#        - store_artifacts:
-#            path: /tmp/workspace/reports
-#  test-python-pubsub:
-#    <<: *anchor_test_env
-#    steps:
-#      - attach_workspace:
-#          # Use the workspace created in generate-clients
-#          at: workspace
-#      - run:
-#          name: Generate and run Java unit tests for Pubsub
-#          command: |
-#            pip install --pre nox-automation
-#            cd workspace/gapic-generator
-#            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python pubsub
-#      - store_test_results:
-#          path: /tmp/workspace/reports
-#      - store_artifacts:
-#          path: /tmp/workspace/reports
-#  test-python-logging:
-#    <<: *anchor_test_env
-#    steps:
-#      - attach_workspace:
-#          # Use the workspace created in generate-clients
-#          at: workspace
-#      - run:
-#          name: Generate and run Java unit tests for Logging
-#          command: |
-#            pip install --pre nox-automation
-#            cd workspace/gapic-generator
-#            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python logging
-#      - store_test_results:
-#          path: /tmp/workspace/reports
-#      - store_artifacts:
-#          path: /tmp/workspace/reports
-#  test-python-speech:
-#    <<: *anchor_test_env
-#    steps:
-#      - attach_workspace:
-#          # Use the workspace created in generate-clients
-#          at: workspace
-#      - run:
-#          name: Generate and run Java unit tests for Speech
-#          command: |
-#            pip install --upgrade nox-automation codecov
-#            cd workspace/gapic-generator
-#            python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python speech
-#      - store_test_results:
-#          path: /tmp/workspace/reports
-#      - store_artifacts:
-#          path: /tmp/workspace/reports
 
 workflows:
   version: 2
@@ -188,21 +116,6 @@ workflows:
       - test-java:
           requires:
             - generate-clients
-#      - test-java-pubsub:
-#          requires:
-#            - generate-clients
-#      - test-java-logging:
-#          requires:
-#            - generate-clients
-#      - test-java-speech:
-#          requires:
-#            - generate-clients
-#      - test-python-pubsub:
-#          requires:
-#            - generate-clients
-#      - test-python-logging:
-#          requires:
-#            - generate-clients
       - test-python:
           requires:
             - generate-clients
