@@ -40,6 +40,7 @@ jobs:
       - run:
           name: Generate all client libraries
           command: |
+            cd gapic-generator
             python smoketests/gapic_smoketest.py \
                 --user-config=.circleci/artman_config.yaml \
                 --log=/tmp/workspace/reports/smoketest.log
@@ -182,7 +183,6 @@ workflows:
   version: 2
   run_generated_tests:
     jobs:
-      - nox
       - generate-clients
       - test-java:
           requires:
