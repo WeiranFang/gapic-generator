@@ -1,11 +1,11 @@
 version: 2.0
 
-anchor_test_env: &anchor_test_env
-  docker:
-    - image: googleapis/artman:0.14.3
-  environment:
-    RUNNING_IN_ARTMAN_DOCKER: True
-  working_directory: /tmp/
+#anchor_test_env: &anchor_test_env
+#  docker:
+#    - image: googleapis/artman:0.14.3
+#  environment:
+#    RUNNING_IN_ARTMAN_DOCKER: True
+#  working_directory: /tmp/
 
 jobs:
   build:
@@ -64,7 +64,7 @@ jobs:
       - run:
           name: Run all Java generated unit tests
           command: |
-            cd gapic-generator/artman-genfiles/java
+            cd workspace/gapic-generator/artman-genfiles/java
             ./gradlew build test
       - run:
           name: Save test results
@@ -78,7 +78,6 @@ jobs:
     working_directory: /tmp/
     docker:
       - image: googleapis/nox:0.18.2
-    working_directory: /tmp/workspace/gapic-generator
     steps:
       - attach_workspace:
           # Use the workspace created in generate-clients
@@ -86,17 +85,17 @@ jobs:
       - run:
           name: Run nox on pubsub
           command: |
-            cd gapic-generator/artman-genfiles/python/pubsub-v1
+            cd workspace/gapic-generator/artman-genfiles/python/pubsub-v1
             nox
       - run:
           name: Run nox on logging
           command: |
-            cd gapic-generator/artman-genfiles/python/logging-v2
+            cd workspace/gapic-generator/artman-genfiles/python/logging-v2
             nox
       - run:
           name: Run nox on speech
           command: |
-            cd gapic-generator/artman-genfiles/python/speech-v1
+            cd workspace/gapic-generator/artman-genfiles/python/speech-v1
             nox
       - store_test_results:
           path: /tmp/workspace/reports
