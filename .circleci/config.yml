@@ -79,20 +79,19 @@ jobs:
           command: |
             cd workspace/gapic-generator/artman-genfiles/python/pubsub-v1
             nox
+          when: always
       - run:
           name: Run nox on logging
           command: |
             cd workspace/gapic-generator/artman-genfiles/python/logging-v2
             nox
+          when: always
       - run:
           name: Run nox on speech
           command: |
             cd workspace/gapic-generator/artman-genfiles/python/speech-v1
             nox
-      - store_test_results:
-          path: /tmp/workspace/reports
-      - store_artifacts:
-          path: /tmp/workspace/reports
+          when: always
 
 workflows:
   version: 2
