@@ -142,6 +142,7 @@ jobs:
       - image: googleapis/nox
     working_directory: /tmp/
     steps:
+      - checkout
       - run:
           name: Run nox on pubsub
           command: |
