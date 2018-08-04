@@ -46,6 +46,8 @@ jobs:
                 --log=/tmp/workspace/reports/smoketest.log
       - store_artifacts:
           path: /tmp/workspace/reports
+      - store_artifacts:
+          path: /tmp/workspace/gapic-generator/artman-genfiles
       - persist_to_workspace:
           # Save all generated directories in workspace for later CircleCI jobs.
           root: /tmp/workspace
