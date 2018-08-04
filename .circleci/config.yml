@@ -45,7 +45,7 @@ jobs:
 #                --log=/tmp/workspace/reports/smoketest.log
       - run:
           name: Make dummy workspace directory
-          command:
+          command: |
             mkdir reports
             mkdir gapic-generator/artman-genfiles
             echo "hello world" > gapic-generator/artman-genfiles/hello.txt
@@ -88,7 +88,7 @@ jobs:
           # Use the workspace created in generate-clients
           at: workspace
       - run:
-          command: echo gapic-generator/artman-genfiles/hello.txt
+          command: cat gapic-generator/artman-genfiles/hello.txt
       - run:
           name: Run nox on pubsub
           command: |
