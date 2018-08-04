@@ -69,7 +69,7 @@ jobs:
       - run:
           name: Run all Java generated unit tests
           command: |
-            cd workspace/gapic-generator/artman-genfiles/java
+            cd gapic-generator/artman-genfiles/java
             ./gradlew build test
       - run:
           name: Save test results
@@ -82,8 +82,8 @@ jobs:
   test-python:
     working_directory: /tmp/
     docker:
-      - image: circleci/openjdk:8-jdk
-#      - image: googleapis/nox:0.18.2
+#      - image: circleci/openjdk:8-jdk
+      - image: googleapis/nox:0.18.2
     steps:
       - attach_workspace:
           # Use the workspace created in generate-clients
