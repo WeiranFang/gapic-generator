@@ -16,7 +16,8 @@ jobs:
     working_directory: /tmp/workspace/gapic-generator
   generate-clients:
     docker:
-      - image: googleapis/artman:0.14.3
+#      - image: googleapis/artman:0.14.3
+      - image: googleapis/git
     working_directory: /tmp/workspace
     steps:
       - checkout:
@@ -47,7 +48,7 @@ jobs:
           command:
             mkdir reports
             mkdir gapic-generator/artman-genfiles
-            echo "hello world" > gapic/generator/artman-genfiles/hello.txt
+            echo "hello world" > gapic-generator/artman-genfiles/hello.txt
       - store_artifacts:
           path: /tmp/workspace/reports
       - store_artifacts:
