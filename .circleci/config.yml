@@ -131,6 +131,7 @@ jobs:
       - run:
           name: Generate and run Java unit tests for Speech
           command: |
+            pip install --upgrade nox-automation codecov
             cd workspace/gapic-generator
             python gapic_smoketest.py --user-config=.circleci/artman_config.yaml python speech
       - store_test_results:
@@ -159,7 +160,7 @@ workflows:
   run_generated_tests:
     jobs:
       - nox
-#      - install-toolkit
+      - install-toolkit
 #      - test-java-pubsub:
 #          requires:
 #            - install-toolkit
@@ -175,9 +176,9 @@ workflows:
 #      - test-python-logging:
 #          requires:
 #            - install-toolkit
-#      - test-python-speech:
-#          requires:
-#            - install-toolkit
+      - test-python-speech:
+          requires:
+            - install-toolkit
 
 machine:
   services:
