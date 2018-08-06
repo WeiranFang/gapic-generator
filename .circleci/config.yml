@@ -146,6 +146,9 @@ workflows:
   version: 2
   run_generated_tests:
     jobs:
+      - test-ruby:
+          requires:
+            - build
 #      - generate-clients
 #      - test-java:
 #          requires:
@@ -153,9 +156,7 @@ workflows:
 #      - test-python:
 #          requires:
 #            - generate-clients
-      - test-ruby:
-          requires:
-            - build
+
 machine:
   services:
     - docker
