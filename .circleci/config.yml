@@ -152,7 +152,9 @@ workflows:
 #      - test-python:
 #          requires:
 #            - generate-clients
-      - test-ruby
+      - test-ruby:
+          requires:
+            - build
 machine:
   services:
     - docker
