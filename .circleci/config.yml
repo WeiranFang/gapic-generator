@@ -103,19 +103,57 @@ jobs:
             nox --session "unit(py='3.6')"
             # TODO: set up credentials for system tests.
           when: always
+  test-ruby:
+    working_directory: /tmp/
+    docker:
+      - image: beevelop/nodejs-python-ruby
+    steps:
+      - checkout
+#      - attach_workspace:
+#          # Use the workspace created in generate-clients
+#          at: workspace
+      - run:
+          name: Set up client generation for ruby clients.
+          command: |
+            git clone https://github.com/GoogleCloudPlatform/synthtool
+            cd synthtool
+            pip install --user -e .
+            gem install bundler
+            git clone https://github.com/GoogleCloudPlatform/google-cloud-ruby
+            cd google-cloud-ruby
+            bundle update
+      - run:
+          name: Test pubsub.
+          command:
+            cd google-cloud-ruby/google-cloud-pubsub
+            bundle update
+            bundle exec rake test
+#      - run:
+#          name: Run all Java generated unit tests
+#          command: |
+#            cd workspace/gapic-generator/artman-genfiles/java
+#            ./gradlew build test
+#      - run:
+#          name: Save test results
+#          command: |
+#            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} /tmp/workspace/reports/ \;
+#      - store_test_results:
+#          path: /tmp/workspace/reports
+#      - store_artifacts:
+#          path: /tmp/workspace/reports
 
 workflows:
   version: 2
   run_generated_tests:
     jobs:
-      - generate-clients
-      - test-java:
-          requires:
-            - generate-clients
-      - test-python:
-          requires:
-            - generate-clients
-
+#      - generate-clients
+#      - test-java:
+#          requires:
+#            - generate-clients
+#      - test-python:
+#          requires:
+#            - generate-clients
+      - test-ruby
 machine:
   services:
     - docker
