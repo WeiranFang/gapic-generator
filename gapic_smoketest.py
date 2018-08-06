@@ -29,6 +29,11 @@ import sys
 logger = logging.getLogger('smoketest')
 logger.setLevel(logging.INFO)
 
+test_languages = [
+    "java",
+    "python"
+    # TODO: all other languages
+]
 
 test_apis = {
     "pubsub" : ("v1", "google/pubsub/artman_pubsub.yaml"),
@@ -37,46 +42,29 @@ test_apis = {
 }
 
 
-def run_smoke_test(api_name, language, root_dir, log, user_config):
+def run_smoke_test(root_dir, log, user_config):
     log_file = _setup_logger(log)
     failure = []
     success = []
     warning = []
-    (api_version, artman_yaml_path) = test_apis[api_name]
-    target = language + "_gapic"
-
-    # Generate client library for an API and language.
-    if _generate_artifact(artman_yaml_path,
-                          target,
-                          root_dir,
-                          log_file,
-                          user_config):
-        msg = 'Failed to generate %s of %s.' % (
-            target, artman_yaml_path)
-        failure.append(msg)
-        logger.info(msg)
-    else:
-    # if True:
-        msg = 'Succeded to generate %s of %s.' % (
-            target, artman_yaml_path)
-        success.append(msg)
-        logger.info(msg)
-
-        # Test the generated client library.
-        logger.info("Starting testing of %s %s client library." %(language, api_name))
-        cwd = os.getcwd()
-        os.chdir("artman-genfiles/%s" % language)
-
-        if _test_artifact(test_languages[language], api_name, api_version, log_file):
-            msg = 'Failed to pass tests for %s library.' % (
-                language)
-            failure.append(msg)
-        else:
-            msg = 'Succeeded to pass tests for %s library.' % (
-                language)
-            success.append(msg)
-        os.chdir(cwd)
-        logger.info(msg)
+    for language in test_languages:
+        for api_name in test_apis:
+            (api_version, artman_yaml_path) = test_apis[api_name]
+            target = language + "_gapic"
+            # Generate client library for an API and language.
+            if _generate_artifact(artman_yaml_path,
+                                  target,
+                                  root_dir,
+                                  log_file,
+                                  user_config):
+                msg = 'Failed to generate %s of %s.' % (
+                    target, artman_yaml_path)
+                failure.append(msg)
+            else:
+                msg = 'Succeded to generate %s of %s.' % (
+                    target, artman_yaml_path)
+                success.append(msg)
+            logger.info(msg)
     logger.info('================ Smoketest summary ================')
     logger.info('Successes:')
     for msg in success:
@@ -125,13 +113,6 @@ def _test_artifact(test_call, api_name, api_version, log_file):
 def parse_args(*args):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'language',
-        help='Language to test and run. One of [\"java\"]')
-        # TODO - support more languages.
-    parser.add_argument(
-        'api',
-        help='The API to generate. One of [\"pubsub\", \"logging\", \"api\"]')
-    parser.add_argument(
         '--root-dir',
         # The default value is configured for CircleCI.
         default='/tmp/workspace/googleapis/',
@@ -162,8 +143,6 @@ if __name__ == '__main__':
 
     root_dir = os.path.abspath(flags.root_dir)
     log = os.path.abspath(flags.log)
-    api = flags.api
-    language = flags.language
     user_config = os.path.abspath(os.path.expanduser(flags.user_config)) if flags.user_config else None
 
-    run_smoke_test(api, language, root_dir, log, user_config)
+    run_smoke_test(root_dir, log, user_config)
