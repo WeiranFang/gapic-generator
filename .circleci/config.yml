@@ -104,7 +104,7 @@ jobs:
             # TODO: set up credentials for system tests.
           when: always
   test-ruby:
-    working_directory: /tmp/
+    working_directory: /tmp/ruby
     docker:
       - image: beevelop/nodejs-python-ruby
     steps:
