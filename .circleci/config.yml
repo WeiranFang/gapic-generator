@@ -32,7 +32,7 @@ jobs:
           name: Generate all client libraries
           command: |
             cd gapic-generator
-            python smoketests/gapic_smoketest.py \
+            python gapic_smoketest.py \
                 --user-config=.circleci/artman_config.yaml \
                 --log=/tmp/workspace/reports/smoketest.log
       - store_artifacts:
