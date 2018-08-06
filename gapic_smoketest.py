@@ -29,37 +29,12 @@ import sys
 logger = logging.getLogger('smoketest')
 logger.setLevel(logging.INFO)
 
-test_languages = {
-    "java" : lambda api_name, api_version, log : run_java_tests(api_name, api_version, log),
-    "python" : lambda api_name, api_version, log : run_python_tests(api_name, api_version, log)
-    # # TODO: all other languages
-}
 
 test_apis = {
     "pubsub" : ("v1", "google/pubsub/artman_pubsub.yaml"),
     "logging" : ("v2", "google/logging/artman_logging.yaml"),
     "speech" : ("v1", "google/cloud/speech/artman_speech_v1.yaml"),
 }
-
-
-def run_java_tests(api_name, api_version, log):
-    gapic_dir = "gapic-google-cloud-%s-%s" % (api_name, api_version)
-    # Run gradle test in the main java directory and also in the gapic directory.
-    cmds = ("%s/gradlew build test" % os.getcwd()).split()
-    exit_code = subprocess.call(cmds, stdout=log, stderr=log)
-    if exit_code:
-        return exit_code
-
-    cmds = ("%s/gradlew -p %s build test" % (os.getcwd(), gapic_dir)).split()
-    return subprocess.call(cmds, stdout=log, stderr=log)
-
-
-def run_python_tests(api_name, api_version, log):
-    logger.info("In directory: %s " % os.getcwd())
-    gapic_dir = "%s-%s" % (api_name, api_version)
-    logger.info("Changing to directory: %s" % gapic_dir)
-    # Run nox in the gapic directory.
-    return subprocess.call(["nox"], cwd=gapic_dir, stdout=log, stderr=log)
 
 
 def run_smoke_test(api_name, language, root_dir, log, user_config):
