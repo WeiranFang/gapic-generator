@@ -95,7 +95,7 @@ jobs:
             # TODO: set up credentials for system tests.
           when: always
   test-ruby:
-    working_directory: /tmp/ruby
+    working_directory: /tmp/
     docker:
       - image: circleci/ruby:2.4-node
     steps:
@@ -125,7 +125,7 @@ jobs:
             bundle exec rake test
           when: always
   test-golang:
-    working_directory: /tmp
+    working_directory: /tmp/
     docker:
       - image: circleci/golang:1.10
     steps:
