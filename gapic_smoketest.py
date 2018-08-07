@@ -30,14 +30,16 @@ logger = logging.getLogger('smoketest')
 logger.setLevel(logging.INFO)
 
 test_languages = [
-    "java",
-    "python"
+    # "java",
+    # "python",
+    "ruby"
     # TODO: all other languages
 ]
 
 test_apis = {
     "pubsub" : ("v1", "google/pubsub/artman_pubsub.yaml"),
-    "logging" : ("v2", "google/logging/artman_logging.yaml"),
+    # TODO: uncomment
+    # "logging" : ("v2", "google/logging/artman_logging.yaml"),
     "speech" : ("v1", "google/cloud/speech/artman_speech_v1.yaml"),
 }
 

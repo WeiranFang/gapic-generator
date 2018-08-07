@@ -71,6 +71,7 @@ jobs:
       # Use Docker image version v0.17.0 because latest v0.18.2 is not compatible with `attach_workspace` step.
       - image: googleapis/nox:0.17.0
     steps:
+      # Generated Python Logging client is broken: https://github.com/googleapis/gapic-generator/issues/2209.
       - attach_workspace:
           # Use the workspace created in generate-clients
           at: workspace
@@ -84,16 +85,6 @@ jobs:
             # python3.7 isn't installed on this Docker image yet, so we can't test against 3.7.
             # https://github.com/googleapis/gapic-generator/issues/2208
           when: always
-      # Generation of Logging client is broken: https://github.com/googleapis/gapic-generator/issues/2209.
-#      - run:
-#          name: Run nox on logging
-#          command: |
-#            cd workspace/gapic-generator/artman-genfiles/python/logging-v2
-#            nox --session "unit(py='2.7')"
-#            nox --session "unit(py='3.5')"
-#            nox --session "unit(py='3.6')"
-#          # Always run the logging test even if the pubsub test fails
-#          when: always
       - run:
           name: Run nox on speech
           command: |
@@ -108,23 +99,31 @@ jobs:
     docker:
       - image: circleci/ruby:2.4-node
     steps:
-      - checkout
-#      - attach_workspace:
-#          # Use the workspace created in generate-clients
-#          at: workspace
+      # Generated Ruby Logging client is broken: https://github.com/googleapis/gapic-generator/issues/2204.
+      - attach_workspace:
+          # Use the workspace created in generate-clients
+          at: workspace
       - run:
-          name: Set up client generation for ruby clients.
+          name: Install Ruby client dependencies.
           command: |
             gem install bundler
             git clone https://github.com/GoogleCloudPlatform/google-cloud-ruby
             cd google-cloud-ruby
             bundle update
       - run:
-          name: Test pubsub.
+          name: Test Pubsub.
           command: |
-            cd google-cloud-ruby/google-cloud-pubsub
+            cd workspace/gapic-generator/artman-genfiles/ruby/google-cloud-ruby/google-cloud-pubsub
             bundle update
             bundle exec rake test
+          when: always
+      - run:
+          name: Test Speech.
+          command: |
+            cd workspace/gapic-generator/artman-genfiles/ruby/google-cloud-ruby/google-cloud-speech
+            bundle update
+            bundle exec rake test
+          when: always
 
 #      - run:
 #          name: Run all Java generated unit tests
@@ -144,8 +143,10 @@ workflows:
   version: 2
   run_generated_tests:
     jobs:
-      - build
-      - test-ruby
+      - generate-clients
+      - test-ruby:
+          requires:
+            - generate-clients
 #      - generate-clients
 #      - test-java:
 #          requires:
