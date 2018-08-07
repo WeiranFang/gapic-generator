@@ -124,21 +124,49 @@ jobs:
             bundle update
             bundle exec rake test
           when: always
+  test-golang:
+    working_directory: /tmp
+    docker:
+      - image: circleci/golang:1.10
+    steps:
+#      - attach_workspace:
+#          # Use the workspace created in generate-clients
+#          at: workspace
+      - run:
+          name: Set up golang dev env.
+          command: |
+            mkdir go
+            export GOPATH=/tmp/golang/go
+            export PATH=$PATH:$GOPATH/bin
+            go get -d cloud.google.com/go/...
+            go get -u github.com/golang/protobuf/protoc-gen-go
+            cd $GOPATH/src/cloud.google.com/go
+      - run:
+          name: Test first batch.
+          command: |
+            go list cloud.google.com/go/... | grep apiv | xargs go test
+          when: always
+      - run:
+          name: Test second batch.
+          command: |
+            go test -short cloud.google.com/go/...
+          when: always
 
 workflows:
   version: 2
   run_generated_tests:
     jobs:
-      - generate-clients
-      - test-ruby:
-          requires:
-            - generate-clients
-      - test-java:
-          requires:
-            - generate-clients
-      - test-python:
-          requires:
-            - generate-clients
+#      - generate-clients
+      - test-golang
+#      - test-ruby:
+#          requires:
+#            - generate-clients
+#      - test-java:
+#          requires:
+#            - generate-clients
+#      - test-python:
+#          requires:
+#            - generate-clients
 
 machine:
   services:
