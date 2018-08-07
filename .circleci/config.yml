@@ -121,7 +121,7 @@ jobs:
             bundle update
       - run:
           name: Test pubsub.
-          command:
+          command: |
             cd google-cloud-ruby/google-cloud-pubsub
             bundle update
             bundle exec rake test
