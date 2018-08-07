@@ -103,16 +103,10 @@ jobs:
             nox --session "unit(py='3.6')"
             # TODO: set up credentials for system tests.
           when: always
-  echo:
-    docker:
-      - image: beevelop/nodejs-python-ruby
-    steps:
-      - run:
-          command: echo HIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
   test-ruby:
     working_directory: /tmp/ruby
     docker:
-      - image: beevelop/nodejs-python-ruby
+      - image: circleci/ruby:2.4-node
     steps:
       - checkout
 #      - attach_workspace:
@@ -121,9 +115,6 @@ jobs:
       - run:
           name: Set up client generation for ruby clients.
           command: |
-            git clone https://github.com/GoogleCloudPlatform/synthtool
-            cd synthtool
-            pip install --user -e .
             gem install bundler
             git clone https://github.com/GoogleCloudPlatform/google-cloud-ruby
             cd google-cloud-ruby
@@ -154,7 +145,6 @@ workflows:
   run_generated_tests:
     jobs:
       - build
-      - echo
       - test-ruby
 #      - generate-clients
 #      - test-java:
