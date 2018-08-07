@@ -103,6 +103,12 @@ jobs:
             nox --session "unit(py='3.6')"
             # TODO: set up credentials for system tests.
           when: always
+  echo:
+    docker:
+      - image: beevelop/nodejs-python-ruby
+    steps:
+      - run:
+          command: echo HIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
   test-ruby:
     working_directory: /tmp/ruby
     docker:
@@ -146,6 +152,7 @@ workflows:
   version: 2
   run_generated_tests:
     jobs:
+      - echo
       - test-ruby:
           requires:
             - build
