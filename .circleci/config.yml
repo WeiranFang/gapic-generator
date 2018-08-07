@@ -114,6 +114,7 @@ jobs:
     docker:
       - image: beevelop/nodejs-python-ruby
     steps:
+      - checkout
 #      - attach_workspace:
 #          # Use the workspace created in generate-clients
 #          at: workspace
@@ -154,9 +155,7 @@ workflows:
     jobs:
       - build
       - echo
-      - test-ruby:
-          requires:
-            - build
+      - test-ruby
 #      - generate-clients
 #      - test-java:
 #          requires:
