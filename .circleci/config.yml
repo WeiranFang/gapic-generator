@@ -21,7 +21,7 @@ anchor_generate_language: &anchor_generate_language
 
 anchor_check_generation: &anchor_check_generation
   command: |
-    # GENERATE_LANGUAGE must be set to a language string (e.g. "java") beforehand.
+    # GENERATE_LANGUAGE must be set in BASH_ENV in a prior command.
     if [ -e /tmp/workspace/reports/${$GENERATE_LANGUAGE}.log ]
     then
         exit 0
@@ -98,10 +98,10 @@ jobs:
           name: Make reports directory
           command: |
             mkdir -p reports
-            export REPORTS_DIR=/tmp/workspace/reports
+            echo 'export REPORTS_DIR="/tmp/workspace/reports"' >> $BASH_ENV
       - run:
           name: Prepare to generate all Java libraries
-          command: export GENERATE_LANGUAGE=java
+          command: echo 'export GENERATE_LANGUAGE="java"' >> $BASH_ENV
           when: always
       - run:
           name: Generate all Java libraries
@@ -109,7 +109,7 @@ jobs:
           when: always
       - run:
           name: Prepare to generate all Python libraries
-          command: export GENERATE_LANGUAGE=python
+          command: echo 'export GENERATE_LANGUAGE="java"' >> $BASH_ENV
           when: always
       - run:
           name: Generate all Python libraries
@@ -117,7 +117,7 @@ jobs:
           when: always
       - run:
           name: Prepare to generate all Python libraries
-          command: export GENERATE_LANGUAGE=go
+          command: echo 'export GENERATE_LANGUAGE="java"' >> $BASH_ENV
           when: always
       - run:
           name: Generate all Go libraries
@@ -204,8 +204,8 @@ jobs:
           name: Set up golang dev env.
           command: |
             mkdir go
-            export GOPATH=/tmp/golang/go
-            export PATH=$PATH:$GOPATH/bin
+            echo 'export GOPATH="/tmp/golang/go"' >> $BASH_ENV
+            echo 'export PATH="$PATH:$GOPATH/bin"' >> $BASH_ENV
             go get -d cloud.google.com/go/...
             go get -u github.com/golang/protobuf/protoc-gen-go
             cd $GOPATH/src/cloud.google.com/go
