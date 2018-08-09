@@ -779,15 +779,10 @@ public class SurfaceNamer extends NameFormatterDelegator {
   }
 
   /**
-   * The name of the class that holds a sample for an API method, calling form, and value set id.
+   * The name of the class that holds a sample for an API method, constructed from {@code parts}.
    */
-  public String getApiSampleClassName(String methodName, String callingForm, String values) {
-    return publicClassName(
-        Name.anyCamel(
-            methodName,
-            "sample",
-            Name.anyCamel(callingForm).toUpperCamel(),
-            Name.anyLower(values).toUpperCamel()));
+  public String getApiSampleClassName(String... parts) {
+    return publicClassName(Name.anyLower(parts));
   }
 
   /**
@@ -1307,15 +1302,6 @@ public class SurfaceNamer extends NameFormatterDelegator {
   /** The path to a config with a specified name. */
   public String getConfigPath(InterfaceConfig interfaceConfig, String name) {
     return getNotImplementedString("SurfaceNamer.getConfigPath");
-  }
-
-  /**
-   * The type name of the method constant in the Grpc container class. This needs to match what Grpc
-   * generates for the particular language.
-   */
-  public String getGrpcMethodConstant(MethodModel method) {
-    return inittedConstantName(
-        Name.from("method").join(Name.anyCamelKeepUpperAcronyms(method.getSimpleName())));
   }
 
   /** The keyword controlling the visiblity, eg "public", "protected". */

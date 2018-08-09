@@ -29,61 +29,52 @@ import sys
 logger = logging.getLogger('smoketest')
 logger.setLevel(logging.INFO)
 
-test_languages = [
-    # "java",
-    # "python",
-    "ruby"
-    # TODO: all other languages
-]
-
 test_apis = {
     "pubsub" : ("v1", "google/pubsub/artman_pubsub.yaml"),
-    # TODO: uncomment
-    # "logging" : ("v2", "google/logging/artman_logging.yaml"),
+    "logging" : ("v2", "google/logging/artman_logging.yaml"),
     "speech" : ("v1", "google/cloud/speech/artman_speech_v1.yaml"),
 }
 
 
-def run_smoke_test(root_dir, log, user_config):
+def generate_clients(language, root_dir, log, user_config):
     log_file = _setup_logger(log)
     failure = []
     success = []
     warning = []
-    for language in test_languages:
-        for api_name in test_apis:
-            (api_version, artman_yaml_path) = test_apis[api_name]
-            target = language + "_gapic"
-            # Generate client library for an API and language.
-            if _generate_artifact(artman_yaml_path,
-                                  target,
-                                  root_dir,
-                                  log_file,
-                                  user_config):
-                msg = 'Failed to generate %s of %s.' % (
-                    target, artman_yaml_path)
-                failure.append(msg)
-            else:
-                msg = 'Succeded to generate %s of %s.' % (
-                    target, artman_yaml_path)
-                success.append(msg)
-            logger.info(msg)
-    logger.info('================ Smoketest summary ================')
-    logger.info('Successes:')
-    for msg in success:
+    for api_name in test_apis:
+        (api_version, artman_yaml_path) = test_apis[api_name]
+        target = language + "_gapic"
+        # Generate client library for an API and language.
+        if _generate_artifact(artman_yaml_path,
+                              target,
+                              root_dir,
+                              log_file,
+                              user_config):
+            msg = 'Failed to generate %s of %s.' % (
+                target, artman_yaml_path)
+            failure.append(msg)
+        else:
+            msg = 'Succeded to generate %s of %s.' % (
+                target, artman_yaml_path)
+            success.append(msg)
         logger.info(msg)
-    logger.info('Warnings:')
-    if warning:
-        for msg in warning:
-            logger.info(msg)
+    logger.info('================ Smoketest summary ================')
+    if not warning or not failure:
+        logger.info('Successes:')
+        if warning:
+            for msg in success:
+                logger.info(msg)
+        logger.info('Warnings:')
+        if warning:
+            for msg in warning:
+                logger.info(msg)
+        logger.info('Failures:')
+        if failure:
+            for msg in failure:
+                logger.error(msg)
+            sys.exit('Smoke test failed.')
     else:
-        logger.info("none.")
-    logger.info('Failures:')
-    if failure:
-        for msg in failure:
-            logger.error(msg)
-        sys.exit('Smoke test failed.')
-    else:
-        logger.info("none.")
+        logger.info("All passed.")
 
 
 def _generate_artifact(artman_config, artifact_name, root_dir, log_file, user_config_file):
@@ -101,19 +92,21 @@ def _generate_artifact(artman_config, artifact_name, root_dir, log_file, user_co
             '--root-dir', root_dir,
             'generate', artifact_name
         ]
-        logger.info("Start artifact generation for %s of %s: %s" %
+        logger.info("Generate artifact %s of %s: %s" %
                     (artifact_name, artman_config, " ".join(grpc_pipeline_args)))
         return subprocess.call(grpc_pipeline_args, stdout=log, stderr=log)
 
 
 def _test_artifact(test_call, api_name, api_version, log_file):
     with open(log_file, 'a') as log:
-        logger.info("In directory: %s" % os.getcwd())
         return test_call(api_name, api_version, log)
 
 
 def parse_args(*args):
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'language',
+        help='The language to generate a client for.')
     parser.add_argument(
         '--root-dir',
         # The default value is configured for CircleCI.
@@ -146,5 +139,6 @@ if __name__ == '__main__':
     root_dir = os.path.abspath(flags.root_dir)
     log = os.path.abspath(flags.log)
     user_config = os.path.abspath(os.path.expanduser(flags.user_config)) if flags.user_config else None
+    language = flags.language
 
-    run_smoke_test(root_dir, log, user_config)
+    generate_clients(language, root_dir, log, user_config)
