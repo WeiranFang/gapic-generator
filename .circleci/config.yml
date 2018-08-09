@@ -89,7 +89,7 @@ jobs:
   generate-clients:
     docker:
       - image: googleapis/artman:0.14.3
-    working_directory: /tmp/workspace
+    working_directory: /tmp/
     steps:
       - attach_workspace:
           # Use the workspace created in install-gapic-generator
@@ -116,7 +116,7 @@ jobs:
           <<: *anchor_generate_language
           when: always
       - run:
-          name: Prepare to generate all Python libraries
+          name: Prepare to generate all Go libraries
           command: echo 'export GENERATE_LANGUAGE="java"' >> $BASH_ENV
           when: always
       - run:
