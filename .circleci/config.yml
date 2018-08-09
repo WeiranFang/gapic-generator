@@ -19,6 +19,16 @@ anchor_generate_language: &anchor_generate_language
       touch ${REPORTS_DIR}/${GENERATE_LANGUAGE}.log
     fi
 
+anchor_check_generation: &anchor_check_generation
+  command: |
+    # GENERATE_LANGUAGE must be set to a language string (e.g. "java") beforehand.
+    if [ -e /tmp/workspace/reports/${$GENERATE_LANGUAGE}.log ]
+    then
+        exit 0
+    else
+        exit 1
+    fi
+
 # We use this setup for jobs that verify that generation of a given language succeeded.
 anchor_verify_generation: &anchor_verify_generation
   working_directory: /tmp/
@@ -43,22 +53,7 @@ anchor_test_python: &anchor_test_python
     # https://github.com/googleapis/gapic-generator/issues/2208
   when: always
 
-anchor_check_generation: &anchor_check_generation
-  command: |
-    # GENERATE_LANGUAGE must be set to a language string (e.g. "java") beforehand.
-    if [ -e /tmp/workspace/reports/${$GENERATE_LANGUAGE}.log ]
-    then
-        exit 0
-    else
-        exit 1
-    fi
 
-anchor_test_ruby: &anchor_test_ruby
-  command: |
-    cd workspace/gapic-generator/artman-genfiles/ruby/google-cloud-ruby/${TEST_API}
-    bundle update
-    bundle exec rake test
-  when: always
 
 jobs:
   build:
@@ -96,6 +91,9 @@ jobs:
       - image: googleapis/artman:0.14.3
     working_directory: /tmp/workspace
     steps:
+      - attach_workspace:
+          # Use the workspace created in install-gapic-generator
+          at: workspace
       - run:
           name: Make reports directory
           command: |
@@ -107,6 +105,14 @@ jobs:
           when: always
       - run:
           name: Generate all Java libraries
+          <<: *anchor_generate_language
+          when: always
+      - run:
+          name: Prepare to generate all Python libraries
+          command: export GENERATE_LANGUAGE=python
+          when: always
+      - run:
+          name: Generate all Python libraries
           <<: *anchor_generate_language
           when: always
       - run:
@@ -132,6 +138,10 @@ jobs:
     <<: *anchor_verify_generation
     environment:
       GENERATION_LANGUAGE: java
+  verify-python-generation:
+    <<: *anchor_verify_generation
+    environment:
+      GENERATION_LANGUAGE: python
   verify-golang-generation:
     <<: *anchor_verify_generation
     environment:
@@ -168,63 +178,28 @@ jobs:
       - attach_workspace:
           # Use the workspace created in generate-clients
           at: workspace
+      # Generated Logging client is broken: https://github.com/googleapis/gapic-generator/issues/2209.
+      - run:
+          name: Prepare to run nox on pubsub
+          command: echo 'export TEST_API="pubsub-v1"' >> $BASH_ENV
       - run:
           name: Run nox on pubsub
-          command: |
-            cd workspace/gapic-generator/artman-genfiles/python/pubsub-v1
-            nox --session "unit(py='2.7')"
-            nox --session "unit(py='3.5')"
-            nox --session "unit(py='3.6')"
-            # python3.7 isn't installed on this Docker image yet, so we can't test against 3.7.
-            # https://github.com/googleapis/gapic-generator/issues/2208
-          when: always
+          <<: *anchor_test_python
+      - run:
+          name: Prepare to run nox on speech
+          command: echo 'export TEST_API="speech-v1"' >> $BASH_ENV
       - run:
           name: Run nox on speech
-          command: |
-            cd workspace/gapic-generator/artman-genfiles/python/speech-v1
-            nox --session "unit(py='2.7')"
-            nox --session "unit(py='3.5')"
-            nox --session "unit(py='3.6')"
-            # TODO: set up credentials for system tests.
-          when: always
-  test-ruby:
-    working_directory: /tmp/
-    docker:
-      - image: circleci/ruby:2.4-node
-    steps:
-      # Generated Ruby Logging client is broken: https://github.com/googleapis/gapic-generator/issues/2204.
-      - attach_workspace:
-          # Use the workspace created in generate-clients
-          at: workspace
-      - run:
-          name: Install Ruby client dependencies.
-          command: |
-            gem install bundler
-            git clone https://github.com/GoogleCloudPlatform/google-cloud-ruby
-            cd google-cloud-ruby
-            bundle update
-      - run:
-          name: Test Pubsub.
-          command: |
-            cd workspace/gapic-generator/artman-genfiles/ruby/google-cloud-ruby/google-cloud-pubsub
-            bundle update
-            bundle exec rake test
-          when: always
-      - run:
-          name: Test Speech.
-          command: |
-            cd workspace/gapic-generator/artman-genfiles/ruby/google-cloud-ruby/google-cloud-speech
-            bundle update
-            bundle exec rake test
-          when: always
+          <<: *anchor_test_python
+
   test-golang:
     working_directory: /tmp/
     docker:
       - image: circleci/golang:1.10
     steps:
-#      - attach_workspace:
-#          # Use the workspace created in generate-clients
-#          at: workspace
+      - attach_workspace:
+          # Use the workspace created in generate-clients
+          at: workspace
       - run:
           name: Set up golang dev env.
           command: |
@@ -244,22 +219,34 @@ jobs:
           command: |
             go test -short cloud.google.com/go/...
           when: always
+  # TODO: test other language clients.
 
 workflows:
   version: 2
   run_generated_tests:
     jobs:
-#      - generate-clients
-      - test-golang
-#      - test-ruby:
-#          requires:
-#            - generate-clients
-#      - test-java:
-#          requires:
-#            - generate-clients
-#      - test-python:
-#          requires:
-#            - generate-clients
+      - install-gapic-generator
+      - generate-clients:
+          requires:
+            - install-gapic-generator
+      - verify-java-generation:
+          requires:
+            - generate-clients
+      - verify-python-generation:
+          requires:
+            - generate-clients
+      - verify-go-generation:
+          requires:
+            - generate-clients
+      - test-java:
+          requires:
+            - verify-java-generation
+      - test-python:
+          requires:
+            - verify-python-generation
+      - test-golang:
+          requires:
+            - verify-golang-generation
 
 machine:
   services:
