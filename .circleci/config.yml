@@ -22,7 +22,7 @@ anchor_generate_language: &anchor_generate_language
 anchor_check_generation: &anchor_check_generation
   command: |
     # GENERATE_LANGUAGE must be set in BASH_ENV in a prior command.
-    if [ -e /tmp/workspace/reports/${$GENERATE_LANGUAGE}.log ]
+    if [ -e /tmp/workspace/reports/${GENERATE_LANGUAGE}.log ]
     then
         exit 0
     else
