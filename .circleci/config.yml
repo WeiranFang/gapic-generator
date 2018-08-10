@@ -34,7 +34,7 @@ anchor_verify_generation: &anchor_verify_generation
   working_directory: /tmp/
   docker:
     # Use a CircleCI Docker image because it is cached and supports workspace persistence.
-    - image: circleci/openjdk:8-jdk
+    - image: circleci/slim-base:latest
   steps:
     - attach_workspace:
         # Load the REPORTS_DIR from generate-clients
